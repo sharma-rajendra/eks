@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-architecture
+  namespace: ingress-architecture
+  labels:
+    app.kubernetes.io/name: ingress-architecture
+    app.kubernetes.io/part-of: ingress-architecture
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            backend:
+              serviceName: "ingress-architecture"
+              servicePort: 8080
