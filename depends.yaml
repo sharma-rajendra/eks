@@ -1,0 +1,240 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-architecture
+  labels:
+    app.kubernetes.io/name: ingress-architecture
+    app.kubernetes.io/part-of: ingress-architecture
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: architecture-configuration
+  namespace: ingress-architecture
+  labels:
+    app.kubernetes.io/name: ingress-architecture
+    app.kubernetes.io/part-of: ingress-architecture
+    #data:
+    #log-format-upstream: '{"remote_addr": "$remote_addr", "time_local": "$time_local", "request": "$request", "status_code": "$status", "body_bytes_sent": "$body_bytes_sent", "referer": "$http_referer", "user_agent": "$http_user_agent", "api_client": $http_api_client, "api_request_id": "$http_api_request_id", "request_length": "$request_length", "request_time": "$request_time", "host": "$host", "namespace": "$namespace", "ingress_name": "$ingress_name" }'
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: architecture-tcp-services
+  namespace: ingress-architecture
+  labels:
+    app.kubernetes.io/name: ingress-architecture
+    app.kubernetes.io/part-of: ingress-architecture
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: architecture-udp-services
+  namespace: ingress-architecture
+  labels:
+    app.kubernetes.io/name: ingress-architecture
+    app.kubernetes.io/part-of: ingress-architecture
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: architecture-ingress-serviceaccount
+  namespace: ingress-architecture
+  labels:
+    app.kubernetes.io/name: ingress-architecture
+    app.kubernetes.io/part-of: ingress-architecture
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: architecture-ingress-clusterrole
+  labels:
+    app.kubernetes.io/name: ingress-architecture
+    app.kubernetes.io/part-of: ingress-architecture
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+      - nodes
+      - pods
+      - secrets
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - create
+      - delete
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - "extensions"
+      - "networking.k8s.io"
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "extensions"
+      - "networking.k8s.io"
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: architecture-ingress-role
+  namespace: ingress-architecture
+  labels:
+    app.kubernetes.io/name: ingress-architecture
+    app.kubernetes.io/part-of: ingress-architecture
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - pods
+      - secrets
+      - namespaces
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    resourceNames:
+      - ingress-controller-leader-haproxy
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - create
+      - delete
+      - patch
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: architecture-ingress-clusterrole-nisa-binding
+  labels:
+    app.kubernetes.io/name: ingress-architecture
+    app.kubernetes.io/part-of: ingress-architecture
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: architecture-ingress-clusterrole
+subjects:
+  - kind: ServiceAccount
+    name: architecture-ingress-serviceaccount
+    namespace: ingress-architecture
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: default-ingress-clusterrole-nisa-binding
+  labels:
+    app.kubernetes.io/name: ingress-architecture
+    app.kubernetes.io/part-of: ingress-architecture
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: architecture-ingress-clusterrole
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: ingress-architecture
+
+---
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ingress-architecture
+  namespace: ingress-architecture
+  labels:
+    app.kubernetes.io/name: ingress-architecture
+    app.kubernetes.io/part-of: ingress-architecture
+spec:
+  limits:
+  - default:
+    min:
+      memory: 250Mi
+      cpu: 100m
+    type: Container
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: architecture-ingress-role-nisa-binding
+  namespace: ingress-architecture
+  labels:
+    app.kubernetes.io/name: ingress-architecture
+    app.kubernetes.io/part-of: ingress-architecture
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: architecture-ingress-role
+subjects:
+  - kind: ServiceAccount
+    name: architecture-ingress-serviceaccount
+    namespace: ingress-architecture
